@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Survey</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="modern.1.1.21.css" type="text/css" rel="stylesheet"/>
+    <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css"/>
+    <link href="survey-css.css" type="text/css" rel="stylesheet"/>
+    <link href="custom.css" type="text/css" rel="stylesheet"/>
+</head>
+<body>
+<div>
+    <video width="320" height="240" controls style="display:none">
+
+    </video>
+</div>
+<div id="surveyElement" style="display:inline-block;width:100%"></div>
+<div id="surveyResult"></div>
+<script type="text/javascript" src="jquery_3.4.1.min.js"></script>
+<script type="text/javascript" src="survey.jquery.1.8.77.min.js"></script>
+<script type="text/javascript" src="surveyjs-widgets.1.8.49.js"></script>
+<script type="text/javascript" src="select2.min.js"></script>
+<script type="text/javascript">
+      var abc = null;
+      var myVar = null;
+      var json =null;
+     var preFilledJson = null;
+      function renderSurvey() {
+  //   alert('rendering survery');
+       //  Survey.StylesManager.applyTheme("modern");
+     var defaultThemeColors=Survey.StylesManager.ThemeColors['default']
+	defaultThemeColors['$main-color']="#6F3280"
+	defaultThemeColors['$main-hover-color']="#410153"
+	Survey.StylesManager.applyTheme()
+
+         window.survey = new Survey.Model(json);
+         window.survey.data = preFilledJson;
+		 
+function mostNextRecentDoB(params) {
+  if (!params && params.length !== 1) return null;
+  var myDates = [];
+  arrayIndex = 0;
+  for(i=0; i<params.length;i++){
+    if(survey.getQuestionByName(params[i])?.displayValue){
+      myDates[arrayIndex] = survey.getQuestionByName(params[i]).displayValue;
+      arrayIndex++;
+    }
+  }
+  //To avoid duplication of dates we need HashMap
+  const mapOldNewDate = new Map();
+  //Transformed the Dates into current Year. Because we need special sorting
+  //on the date. We want to see the next DOB on the top irrespective of year.
+  myDates = myDates.map((element) => {var d = new Date(element);
+  //this map maintain the old and new date format.
+  if(!mapOldNewDate.has(`${d.getMonth()+1}/${d.getDate()}/${new Date().getFullYear()}`)){
+    mapOldNewDate.set(`${d.getMonth()+1}/${d.getDate()}/${new Date().getFullYear()}`,`${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`)
+    return `${d.getMonth()+1}/${d.getDate()}/${new Date().getFullYear()}`;
+    }
+  });
+  var getCurrentMonth = new Date();
+  var aheadMonthsDays = [];
+  var previousMonthsDays = [];
+  myDates.forEach((element) => {
+    var d = new Date(element);
+    if(d.getMonth() >= getCurrentMonth.getMonth())
+    {
+      //Following Logic push only those months which ahead from current month.
+      aheadMonthsDays.push(element)
+    }
+    else{
+      //Following Logic push only those months which behind from current month.
+      previousMonthsDays.push(element)
+    }
+  })
+  /*** All dates having same current year ***/
+  if(aheadMonthsDays.length > 0)
+  {
+    //It means some DOB of current year are exist in the list.
+    //Let's sort them and pick the first DOB
+    console.log(aheadMonthsDays,"aheadMonthsDays Unsortted");
+    aheadMonthsDays.sort(function(a,b){
+      return new Date(a) - new Date(b)
+    })
+    console.log(aheadMonthsDays,"aheadMonthsDays Sortted");
+    return mapOldNewDate.get(aheadMonthsDays[0]);
+  }else{
+    console.log(previousMonthsDays,"previousMonthsDays Unsortted");
+      previousMonthsDays.sort(function(a,b){
+      return new Date(a) - new Date(b)
+    })
+    console.log(previousMonthsDays,"previousMonthsDays Sortted");
+    return mapOldNewDate.get(previousMonthsDays[0]);
+  }
+}
+function mostPreviousRecentDoB(params) {
+  if (!params && params.length !== 1) return null;
+  myDates = []
+  arrayIndex = 0;
+  for(i=0; i<params.length;i++){
+    if(survey.getQuestionByName(params[i])?.displayValue){
+      myDates[arrayIndex] = survey.getQuestionByName(params[i]).displayValue;
+      arrayIndex++;
+    }
+  }
+  myDates.sort((a, b) => {
+  const ad = new Date(a.date).getTime();
+  const bd = new Date(b.date).getTime();
+  return bd-ad;
+});
+  console.log(myDates);
+  return myDates[myDates.length-1];
+}
+Survey.FunctionFactory.Instance.register("mostNextRecentDoB", mostNextRecentDoB);
+Survey.FunctionFactory.Instance.register("mostPreviousRecentDoB", mostPreviousRecentDoB);
+         survey
+         .onAfterRenderQuestion
+         .add(function (sender, options) {
+            if(options.question.getType() === "file") {
+               var input = options.htmlElement.querySelector("input");
+               input.capture = "camera";
+            }
+            if(options.question.getType() === "microphone") {
+             //options.question.title = '';
+			//document.querySelector(options.question.name).style.backgroundColor = "red";
+            }
+         });
+              survey
+			.onAfterRenderPage
+			.add(function (survey, options) {
+			//alert('onAfterRenderPage');
+			setTimeout(function(){
+             //   alert('timer fire');
+			 $( "#btnRecordingStarts" ).trigger( "click" )
+			 }, 2000);
+
+
+				return;
+			});
+			survey
+			.onCurrentPageChanging
+			.add(function (survey, options) {
+				//alert('onCurrentPageChanging');
+				$( "#btnRecordingStops" ).trigger( "click" );
+			});
+
+
+      survey
+         .onComplete
+         .add(function (survey) {
+         $( "#btnRecordingStops" ).trigger( "click" );
+
+       Object.entries(survey.data).map(([key, value]) => {
+            if (typeof value != 'object') return;
+            Object.entries(value).map(([ks_, val_]) => {
+                if (Object.entries(val_).length < 0) return;
+                Object.entries(val_).map(([k_, v_]) => {
+<!--                    if(k_ == 'type' && v_ == 'image/jpeg')-->
+<!--                    {-->
+<!--                    delete value[0].content;-->
+<!--                    }-->
+				if(k_ == 'type' && v_.includes('image'))
+					  {
+						delete value[ks_].content;
+					  }
+                });
+            });
+        });
+        console.log('plain Data',survey.getPlainData());
+ const surveyData=survey.data
+        var data = [];
+         console.log('Answer',survey.data);
+for(var key in survey.questionHashes.names) {
+            var question = survey.getQuestionByValueName(key);
+            let choicesTemp=[]
+            let choicesKey=[]
+            console.log(question,survey.data[key],'536')
+            if(question){
+                // choicesTemp=findChoices(question.enabledChoices,question)
+                if(question.getType()==='microphone' || question.getType()==='file'){
+                    console.log('microphone or audio',question.getType())
+                    console.log('question object',question,survey.data[key],key)
+                }
+                else{
+                    if(question.getType()==='matrix'){
+                        console.log('matrix',question.getType(),survey.data[key])
+						if(question.columns){
+							choicesKey=getKeysForMatrix(question.columns,key,survey.data[key],question)
+						}
+                    }
+                    else if(question.getType()==='multipletext'){
+                        console.log('multipletext',question.getType(),survey.data[key])
+					
+							choicesKey=getKeysForMultiText(question.items,key,survey.data[key],question)
+						
+                    }
+                    else if(question.getType()==='matrixdynamic'){
+                        console.log('matrixdynamic',question.getType(),survey.data[key])
+						if(question.generatedVisibleRows !=null)
+						{
+							choicesKey=getKeysForMatrixDynamic(question.generatedVisibleRows,key,survey.data[key],question)
+						}
+                    }
+                    else if(question.getType()==='matrixdropdown'){
+                        console.log('matrixdropdown',question.getType(),survey.data[key])
+						if(question.generatedVisibleRows !=null)
+						{
+                        choicesKey=getKeysForMatrixDropdown(question.generatedVisibleRows,key,survey.data[key],question)
+						}
+                    }//|| question.getType()==='dropdown' || question.getType()==='radiogroup'
+                    else if(question.getType()==='checkbox'  || question.getType() ==='ranking' || (question.getType() === 'imagepicker' && question.multiSelect) ){
+                        console.log('multiOptions',question.getType(),survey.data[key])
+						console.log('Enabledchoices',question.enabledChoices);
+						console.log('choices',question.choices);
+                        choicesKey=getKeys(question.choices,key,survey.data[key],question)
+                    }
+                }
+                if(!question) continue;
+                // var questionResult = { 
+                //     name: key,
+                //     value: survey.data[key]||'',
+                //     title: question.title,
+                //     displayValue: question.displayValue ,
+                //     type:question.getType(),
+                //     choices:choicesTemp,
+                //     choicesKey,
+                // }
+                // let temp={...questionResult}
+                var questionResult={
+                    type:question.getType(),
+                }
+                let temp={...questionResult}
+                if(question.isOtherSelected){
+                    if(question.getType()==='matrix' || question.getType()==='multipletext'  || question.getType()==='matrixdropdown' ||question.getType()==='matrixdynamic'){
+                        temp['result']=[...choicesKey]
+                        console.log( 'result',temp['result']);
+					
+						
+                    }
+					else if(question.getType()==='checkbox')
+					{
+					  temp['result']=[...choicesKey]
+					console.log('dsadas',survey.data[question.name+'-Comment'])
+					temp.result.push({
+                        [`${question.name}_other`]:{
+                             text:survey.data[question.name+'-Comment'],
+                                value:survey.data[question.name+'-Comment']
+                        }
+                    })
+					}
+					else if(question.getType()==='dropdown'||question.getType()==='radiogroup' ||  (question.getType()==='imagepicker' && !question.multiSelect) )
+					{
+					    temp['result']=[{
+                            [`${key}_other`]:{
+                                text:question.displayValue,
+                                value:question.displayValue
+                            }
+                        }]
+					}
+                    else if(question.getType()==='text' || question.getType()==='rating'||question.getType()==='comment'|| question.getType()==='boolean'){
+                        // temp['result']=[...choicesKey]
+                        temp['result']=[{
+                            [`${key}_other`]:{
+                                text:question.displayValue,
+                                value:question.displayValue
+                            }
+                        }]
+                    }
+                }
+                else{
+				//||
+                    if(question.getType()==='checkbox' || question.getType()==='matrix' || question.getType()==='multipletext'  || question.getType()==='matrixdropdown'||question.getType()==='matrixdynamic' || question.getType() === 'ranking' ||(question.getType()==='imagepicker' && question.multiSelect)){
+                        temp['result']=[...choicesKey]
+                        if(temp['result'].length === 0)
+                        {
+                            temp['result']=[{
+                            [`${key}`]:{
+                                text:question.displayValue,
+                                value:question.displayValue
+                            }
+                        }]
+                           
+                        }
+                       
+                    }
+					else if(question.getType()==='dropdown'||question.getType()==='radiogroup' || (question.getType()==='imagepicker' && !question.multiSelect)){
+                        temp['result']=[...choicesKey]
+                        if(temp['result'].length === 0)
+                        {
+                            temp['result']=[{
+                            [`${key}`]:{
+                                text:question.displayValue,
+                                value:survey.data[key]||''
+                            }
+                        }]
+
+                        }
+
+                    }
+                    else if(question.getType()==='text' || question.getType()==='rating'||question.getType()==='comment'|| question.getType()==='boolean' ||  question.getType()==='microphone' || question.getType()==='expression'){
+                        // temp['result']=[...choicesKey]
+                        temp['result']=[{
+                            [key]:{
+                                text:question.displayValue,
+                                value:survey.data[key]||''
+                            }
+                        }]
+                    }
+                    else if(question.getType()==='file' ){
+					
+                        temp['result']=survey.data[key]?.map((item,index)=>{
+                            return  {
+                                [`${key}_${index+1}`]:{
+                                    text:item.name,
+                                    value:item.name,
+                                    type:item.type
+                                }
+                            }
+                        })
+						
+                    }
+                }
+                questionResult=temp
+				if(questionResult.type !='html')
+				{
+				data.push(questionResult);
+				}
+                
+      
+            }
+        }
+
+     //  alert(surveyData)
+      // alert('final',data)
+
+				console.log(data);
+         	Android.sendData(JSON.stringify(data, null, 3),JSON.stringify(surveyData, null, 3));
+
+         });
+
+
+         $("#surveyElement").Survey({model: survey});
+      }
+      function getFromAndroid() {
+        json = Android.getFromAndroid();
+        var textAlignment =  Android.getLeftToRightSettings();
+        var urduFont =  Android.getUrduFontSettings();
+        var fontSize =  Android.getFontSize();
+       //  renderSurvey()
+
+
+
+      	getAnswerJSON();
+       if(textAlignment){
+        $(".sv_main").attr("dir", "rtl");
+        }
+        else
+        {
+         $(".sv_main").attr("dir", "ltl");
+        }
+
+        if(urduFont){
+          $('.sv_main').css('font-family', 'Jameel_Noori_Nastaleeq');
+          }
+
+       $('.sv_main').css('font-size', +fontSize+'px');
+      }
+      function getAnswerJSON()
+      {
+      preFilledJson =   JSON.parse(Android.getAnswerJSON());
+   //   alert(preFilledJson);
+      renderSurvey()
+      }
+      getFromAndroid();
+
+
+function findChoices(choices,question){
+        let arr=[]
+        choices && choices.forEach((item)=>{
+            let obj={
+                key:item.itemValue,
+                value:item.locText.text||''
+            }
+            arr.push(obj)
+        })
+        return arr
+    }
+    function getKeys(choices,key,answers,question,key1){
+       let arr=[]
+        // var english = /^[A-Za-z0-9]*$/;
+        // var english = /^[a-zA-Z0-9!@#\$%\^\&*\)\(+=._-]+$/g
+        choices && choices.forEach((item,index)=>{
+             if(item.value==='other'){
+                // let temp=key+'_'+'other'
+                let temp=key
+                if(key1){
+                    temp=temp+'_'+key1+'_other'
+                }
+                else{
+                    // if(question.getType()==='checkbox'){
+                    //     temp=temp+'_other'
+                    // }
+                    temp=temp+'_other'
+                }
+                if(answers?.includes('other')){
+                    arr.push({
+                        [temp]:{
+                            text:item.locOwner.comment,
+                            value:item.locOwner.comment
+                        }
+                    })
+                }
+                else{
+                    if(question.getType()==='checkbox'){
+                        arr.push({
+                            [temp]:{
+                                text:'',
+                                value:''
+                            }
+                        })
+                    }
+					else if(question.getType()==='imagepicker'){
+                        arr.push({
+                            [temp]:{
+                                text:'',
+                                value:''
+                            }
+                        })
+                    }
+                }
+            }
+            else{
+                // let temp=key+'_'+item.locText.text
+                let temp=key
+                if(key1){
+                    if(question.getType()==='checkbox'){
+                        temp=temp+'_'+key1+'_'+(index+1)
+                    }
+					else  if(question.getType()==='ranking'){
+                        temp=temp+'_'+key1+'_'+(index+1)
+                    }
+					else  if(question.getType()==='imagepicker'){
+                        temp=temp+'_'+key1+'_'+(index+1)
+                    }
+                    else{
+                        temp=temp+'_'+key1
+                    }
+                }
+                else{
+                    if(question.getType()==='checkbox'){
+                        temp=temp+'_'+(index+1)
+                    }
+					else  if(question.getType()==='ranking'){
+                        temp=temp+'_'+(index+1)
+                    }
+					else  if(question.getType()==='imagepicker'){
+                        temp=temp+'_'+(index+1)
+                    }
+                }
+                temp=temp.replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'_')
+                temp=temp.replace(/_+/g, '_')
+                temp=temp.replace(/_+$/,'')
+                // let temp2={}
+                if(answers?.includes(item.value)){
+                    console.log(answers,item,'answers')
+					if(question.getType() === 'ranking')
+					{
+					var currentItem = choices.find(x => x.value === answers[index]);
+									      arr.push({
+                        [temp]:{
+                            text:item.locText.text===''?item.locText.textOrHtml:currentItem.locText.text,
+                            value:currentItem.value||''
+                        }
+                    })
+					}
+					else{	
+                    arr.push({
+                        [temp]:{
+                            text:item.locText.text===''?item.locText.textOrHtml:item.locText.text,
+                            value:item.value||''
+                        }
+                    })
+					
+					}
+					
+                }
+                else{
+                    if(question.getType()==='checkbox'){
+                        arr.push({
+                            [temp]:{
+                                text:'',
+                                value:''
+                            }
+                        })
+                    }
+					else if(question.getType()==='imagepicker'){
+                        arr.push({
+                            [temp]:{
+                                text:'',
+                                value:''
+                            }
+                        })
+                    }
+					else if(question.getType()==='ranking'){
+                        arr.push({
+                            [temp]:{
+                                text:'',
+                                value:''
+                            }
+                        })
+                    }
+					// else if(question.getType()==='radiogroup' || question.getType()==='dropdown'){
+                    //     debugger;
+                    //      let obj = arr[0];
+                    //     if(obj!== undefined ){
+                    //         console.log(Object.keys(obj));
+                    //         if(!Object.keys(obj).includes(temp))
+                    //         {
+                    //     arr.push({
+                    //         [temp]:{
+                    //             text:'',
+                    //             value:''
+                    //         }
+                    //     })
+                    //         }
+                        
+                    // }
+                    // else
+                    // {
+                    //     arr.push({
+                    //         [temp]:{
+                    //             text:'',
+                    //             value:''
+                    //         }
+                    //     })
+                    // }
+                           
+                       
+                           
+                        
+                     
+                    // }
+				
+                }
+                // arr.push(temp2)
+            }
+        })
+		console.log(question.getType());
+        if(question.getType()!=='checkbox' &&  answers?.includes('other')){
+            if(key1){
+                arr.push({
+                    [`${key}_${key1}`]:{
+                        text:'',
+                        value:''
+                    }
+                })
+            }
+            else{
+                arr.push({
+                    [`${key}`]:{
+                        text:'',
+                        value:''
+                    }
+                })
+            }
+        }
+        if(question.getType()!=='checkbox' &&  !answers?.includes('other')){
+            if(question.hasOther){
+                if(key1){
+                    arr.push({
+                        [`${key}_${key1}_other`]:{
+                            text:'',
+                            value:''
+                        }
+                    })
+                }
+                else{
+                    arr.push({
+                        [`${key}_other`]:{
+                            text:'',
+                            value:''
+                        }
+                    })
+                }
+            }
+        }
+
+   
+		console.log('arr',arr);
+        return arr
+    }
+
+	function getKeysForMatrix(choices,key,answers,question){
+       let arr=[]
+        // question.cells.rows.forEach((row,rowIndex)=>{
+        //     question.cells.columns.forEach((column,columnIndex)=>{
+        //         let temp=key+'_'+row.value+'_'+column.value
+        //         temp=temp.replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'_')
+        //         temp=temp.replace(/_+/g, '_')
+        //         temp=temp.replace(/_+$/,'')
+        //         if(answers[row.value]===column.value){
+        //             arr.push({
+        //                 [temp]:{
+        //                     rowText:row.locText.text,
+        //                     rowValue:row.value||'',
+        //                     text:column.locText.text,
+        //                     value:column.value||''
+        //                 }
+        //             })
+        //         }
+        //         else{
+        //             arr.push({
+        //                 [temp]:{
+        //                     rowText:'',
+        //                     rowValue:'',
+        //                     text:'',
+        //                     value:''
+        //                 }
+        //             })
+        //         }
+        //         // arr.push(temp2)          
+        //     })
+        // })
+        question.cells.rows.forEach((row,rowIndex)=>{
+            question.cells.columns.forEach((column,columnIndex)=>{
+                let temp=key+'_'+row.value
+                temp=temp.replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'_')
+                temp=temp.replace(/_+/g, '_')
+                temp=temp.replace(/_+$/,'')
+                if(answers?.[row.value]===column.value){
+                    arr.push({
+                        [temp]:{
+                            rowText:row.locText.text,
+                            rowValue:row.value||'',
+                            text:column.locText.text,
+                            value:column.value||''
+                        }
+                    })
+                }
+				
+            })
+        })
+        return arr
+    }
+    function getKeysForMultiText(elements,key,answers,question){
+        console.log('Multi text')
+        console.log(elements,key,answers,question)
+        let arr=[]
+        elements.forEach((item,index)=>{
+            let temp=key+'_'+(index+1)
+            temp=temp.replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'_')
+            temp=temp.replace(/_+/g, '_')
+            temp=temp.replace(/_+$/,'')
+            arr.push({[temp]:{
+                text:item.value,
+                value:item.value
+            }})
+        })
+        console.log(arr,'multitext')
+        return arr
+    }
+    function getKeysForMatrixDynamic(elements,key,answers,question){
+        let arr=[]
+        elements.forEach((row,rowIndex)=>{
+            row.cells.forEach((cell,cellIndex)=>{
+                let temp=key+'_'+(rowIndex+1)+'_'+(cellIndex+1)
+                temp=temp.replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'_')
+                temp=temp.replace(/_+/g, '_')
+                temp=temp.replace(/_+$/,'')
+                if(cell.question.getType()==='text'||cell.question.getType()==='comment'||cell.question.getType()==='rating'||cell.question.getType()==='boolean'){
+                    arr.push({[temp]:{
+                        text:cell.value,
+                        value:cell.value
+                    }})
+                }
+                else if(cell.question.getType()==='checkbox'){
+                    let choicesKey=getKeys(cell.question.enabledChoices,key+`_`+(rowIndex+1),answers[rowIndex][cell.question.name],cell.question,cellIndex+1)
+                    choicesKey.forEach(item=>{
+                        arr.push(item)
+                    })
+                }
+                else if(cell.question.getType()==='radiogroup' || cell.question.getType()==='dropdown'){
+					if(answers.includes(rowIndex)){
+						let choicesKey=getKeys(cell.question.enabledChoices,key+`_`+(rowIndex+1),[answers[rowIndex][cell.question.name]],cell.question,cellIndex+1)
+						choicesKey.forEach(item=>{
+							arr.push(item)
+						})
+					}
+                }
+				
+            })
+        })
+        return arr
+    }
+    function getKeysForMatrixDropdown(elements,key,answers,question){
+        let arr=[]
+        elements.forEach((row,rowIndex)=>{
+            row.cells.forEach((cell,cellIndex)=>{
+                let temp=key+'_'+(rowIndex+1)+'_'+(cellIndex+1)
+                temp=temp.replace(/[&\/\\#,+()$~%.'":*?<>{}\s]/g,'_')
+                temp=temp.replace(/_+/g, '_')
+                temp=temp.replace(/_+$/,'')
+                if(cell.question.getType()==='text'||cell.question.getType()==='comment'||cell.question.getType()==='rating'||cell.question.getType()==='boolean'){
+                    arr.push({[temp]:{
+                        text:cell.value,
+                        value:cell.value
+                    }})
+                }
+				
+			
+                else if(cell.question.getType()==='checkbox'){
+				 console.log(question,"Error Question checkbox");
+                console.log(cell.question.getType(),"Matrix Question Type");
+                console.log(cell.question.name,"Matrix Question Name");
+				console.log(typeof(answers),"type of Anwser");
+					if(typeof answers?.[row.name] !== 'undefined'){
+				console.log(cell.question,"Question Matrix Dropdown");
+                    let choicesKey=getKeys(cell.question.enabledChoices,key+`_`+(rowIndex+1),answers[row.name][cell.question.name],cell.question,cellIndex+1)
+                    choicesKey.forEach(item=>{
+                        arr.push(item)
+                    })
+                }
+				}
+                else if(cell.question.getType()==='radiogroup' || cell.question.getType()==='dropdown'){
+				 console.log(question,"Error Question radiogroup DropDown");
+				 console.log(cell.question.getType(),"Matrix Question Type");
+                 console.log(cell.question.name,"Matrix Question Name");
+				 console.log(typeof(answers),"type of Anwser");
+				if(typeof answers?.[row.name] !== 'undefined'){
+                    let choicesKey=getKeys(cell.question.enabledChoices,key+`_`+(rowIndex+1),[answers[row.name][cell.question.name]],cell.question,cellIndex+1)
+                    choicesKey.forEach(item=>{
+                        arr.push(item)
+                    })
+					}
+                }
+            })
+        })
+        return arr
+    }
+   </script>
+</body>
+</html>

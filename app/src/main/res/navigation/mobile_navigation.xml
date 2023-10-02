@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_my_projects">
+
+    <fragment
+        android:id="@+id/nav_my_projects"
+        android:name="com.example.markitsurvey.ui.myprojects.MyProjectsFragment"
+        android:label="@string/my_projects"
+        tools:layout="@layout/fragment_my_projects" />
+
+    <fragment
+        android:id="@+id/nav_synchronize"
+        android:name="com.example.markitsurvey.ui.synchronize.SynchronizeFragment"
+        android:label="@string/synchronize"
+        tools:layout="@layout/fragment_synchronize" />
+
+    <fragment
+        android:id="@+id/nav_logs"
+        android:name="com.example.markitsurvey.ui.logger.LogFileFragment"
+        android:label="@string/logs"
+        tools:layout="@layout/fragment_slideshow" />
+    <fragment
+        android:id="@+id/nav_setting"
+        android:name="com.example.markitsurvey.ui.SettingFragment"
+        android:label="@string/settings"
+        tools:layout="@layout/fragment_setting" />
+    <fragment
+        android:id="@+id/nav_about_app"
+        android:name="com.example.markitsurvey.ui.AboutAppFragment"
+        android:label="@string/about_app"
+        tools:layout="@layout/fragment_about_app" />
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.example.markitsurvey.ui.ProfileFragment"
+        android:label="@string/profile"
+        tools:layout="@layout/fragment_profile" />
+</navigation>

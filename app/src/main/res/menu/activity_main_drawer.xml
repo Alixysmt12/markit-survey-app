@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+
+    <group android:id="@+id/projects" android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_my_projects"
+            android:icon="@drawable/ic_overr"
+            android:title="@string/my_projects" />
+
+    </group>
+    <group android:id="@+id/syn" android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_synchronize"
+            android:icon="@drawable/ic_syncc"
+            android:title="@string/synchronize" />
+        <item
+            android:id="@+id/nav_logs"
+            android:icon="@drawable/ic_bell"
+            android:title="@string/logs" />
+    </group>
+    <group android:id="@+id/about" android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@drawable/ic_aboutt"
+            android:title="@string/profile" />
+        <item
+            android:id="@+id/nav_about_app"
+            android:icon="@drawable/ic_aboutt"
+            android:title="@string/about_app" />
+        <item
+            android:id="@+id/nav_permission"
+            android:icon="@drawable/ic_perr"
+            android:title="@string/permission" />
+
+        <item
+            android:id="@+id/nav_setting"
+            android:icon="@drawable/ic_setting"
+            android:title="@string/settings" />
+
+
+
+
+        <item
+            android:id="@+id/nav_log_out"
+            android:icon="@drawable/ic_lockw"
+            android:title="@string/logout" />
+    </group>
+
+</menu>
